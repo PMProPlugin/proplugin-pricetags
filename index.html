@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการป้ายราคา - Price Tag Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ff4444;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff4444 0%, #cc3333 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #666666 0%, #444444 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .btn-small {
+            padding: 5px 12px;
+            font-size: 14px;
+        }
+
+        /* Login Page */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            min-width: 350px;
+        }
+
+        .login-box h2 {
+            margin-bottom: 30px;
+            color: #ff4444;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #ff4444;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Main App */
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .form-select {
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-family: inherit;
+            min-width: 150px;
+        }
+
+        .search-input {
+            min-width: 300px;
+        }
+
+        /* Data Table */
+        .table-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #ff4444;
+        }
+
+        .table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .details-cell {
+            max-width: 250px;
+        }
+
+        .details-list {
+            list-style: none;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .details-list li {
+            margin-bottom: 3px;
+        }
+
+        .details-list li:before {
+            content: "• ";
+            color: #ff4444;
+            margin-right: 5px;
+        }
+
+        .price {
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .price.strikethrough {
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .expire-date {
+            color: #ff4444;
+            font-weight: 500;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .page-info {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Preview Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Price Tag */
+        .price-tag {
+            border: 3px solid #1a1a1a;
+            background: #ffffff;
+            color: #1a1a1a;
+            margin: 20px auto;
+            position: relative;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        .tag-a4 {
+            width: 210mm;
+            height: 297mm;
+            padding: 21mm;
+        }
+
+        .tag-a5 {
+            width: 210mm;
+            height: 148mm;
+            padding: 15mm;
+        }
+
+        .tag-a6 {
+            width: 148mm;
+            height: 105mm;
+            padding: 10mm;
+        }
+
+        .tag-accessories {
+            width: 148mm;
+            height: 35mm;
+            padding: 3.5mm;
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            max-width: 60px;
+            max-height: 40px;
+        }
+
+        .tag-sku {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .tag-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .tag-product-name {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 60px 0 20px 0;
+        }
+
+        .tag-details {
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .tag-details ul {
+            list-style: none;
+        }
+
+        .tag-details li:before {
+            content: "• ";
+            color: #ff4444;
+            margin-right: 5px;
+        }
+
+        .tag-price-area {
+            position: relative;
+        }
+
+        .tag-expire {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            color: #ff4444;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .tag-price-main {
+            font-size: 48px;
+            font-weight: 700;
+            color: #ff4444;
+            text-align: right;
+        }
+
+        .tag-price-normal {
+            font-size: 24px;
+            text-decoration: line-through;
+            color: #999;
+            text-align: right;
+            margin-top: -10px;
+        }
+
+        /* Accessories Tag Specific */
+        .tag-accessories .tag-content {
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .tag-accessories .tag-product-name {
+            font-size: 16px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .tag-accessories .tag-details {
+            display: none;
+        }
+
+        .tag-accessories .tag-price-main {
+            font-size: 24px;
+            margin-left: 20px;
+        }
+
+        /* Admin Panel */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: #ff4444;
+            border-color: #ff4444;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .file-upload {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .modal-content {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .price-tag {
+                transform: scale(0.5);
+                transform-origin: top left;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .success {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <h2>เข้าสู่ระบบ</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">ชื่อผู้ใช้</label>
+                    <input type="text" id="username" class="form-control" placeholder="กรุณาใส่ชื่อผู้ใช้" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">รหัสผ่าน</label>
+                    <input type="password" id="password" class="form-control" placeholder="กรุณาใส่รหัสผ่าน" required>
+                </div>
+                <div id="loginError" class="error"></div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">ระบบจัดการป้ายราคา</div>
+                <div class="user-info">
+                    <span id="userRole"></span>
+                    <button id="adminPanelBtn" class="btn btn-small hidden">แผงควบคุม</button>
+                    <button id="logoutBtn" class="btn btn-secondary btn-small">ออกจากระบบ</button>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <div class="controls-row">
+                    <div class="control-group">
+                        <label for="searchInput">ค้นหา SKU หรือชื่อสินค้า</label>
+                        <input type="text" id="searchInput" class="form-control search-input" placeholder="พิมพ์ SKU หรือชื่อสินค้า...">
+                    </div>
+                    <div class="control-group">
+                        <label for="expireFilter">กรองตามวันหมดอายุ</label>
+                        <input type="date" id="expireFilter" class="form-control">
+                    </div>
+                    <div class="control-group">
+                        <label for="channelSelect">ช่องทางการขาย</label>
+                        <select id="channelSelect" class="form-select">
+                            <option value="flagship">Flagship</option>
+                            <option value="dealer">Dealer</option>
+                            <option value="marketplace">Marketplace</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="templateSelect">ขนาดป้าย</label>
+                        <select id="templateSelect" class="form-select">
+                            <option value="a4">A4</option>
+                            <option value="a5">A5</option>
+                            <option value="a6">A6</option>
+                            <option value="accessories">Accessories Tag</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="controls-row">
+                    <button id="previewBtn" class="btn">ดูตัวอย่าง</button>
+                    <button id="printAllBtn" class="btn">พิมพ์ทั้งหมด</button>
+                    <button id="exportPdfBtn" class="btn btn-secondary">Export PDF</button>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll" class="checkbox"></th>
+                            <th>รหัสสินค้า</th>
+                            <th>ชื่อสินค้า</th>
+                            <th>รายละเอียด</th>
+                            <th>ราคาปกติ</th>
+                            <th>ราคาตามช่องทาง</th>
+                            <th>วันหมดอายุ</th>
+                            <th id="gpColumn" class="hidden">GP%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <tr>
+                            <td colspan="8" class="loading">กำลังโหลดข้อมูล...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prevPageBtn" class="btn btn-secondary">ก่อนหน้า</button>
+                    <span id="pageInfo" class="page-info">หน้า 1 จาก 1</span>
+                    <button id="nextPageBtn" class="btn btn-secondary">ถัดไป</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden">
+        <div class="container">
+            <div class="header">
+                <div class="logo">แผงควบคุมผู้ดูแลระบบ</div>
+                <div class="user-info">
+                    <button id="backToMainBtn" class="btn btn-secondary">กลับหน้าหลัก</button>
+                </div>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="sku">จัดการ SKU</button>
+                <button class="tab-btn" data-tab="template">แม่แบบและโลโก้</button>
+                <button class="tab-btn" data-tab="users" id="usersTab">จัดการผู้ใช้</button>
+                <button class="tab-btn" data-tab="logs">บันทึกการใช้งาน</button>
+                <button class="tab-btn" data-tab="import">นำเข้า/ส่งออก</button>
+            </div>
+
+            <!-- SKU Management -->
+            <div id="skuTab" class="tab-content active">
+                <h3>จัดการข้อมูล SKU</h3>
+                <div id="skuForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editSku">รหัสสินค้า</label>
+                            <input type="text" id="editSku" class="form-control" placeholder="MP-00001">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription">ชื่อสินค้า</label>
+                            <input type="text" id="editDescription" class="form-control" placeholder="ชื่อสินค้า">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDetails">รายละเอียด (แยกบรรทัดด้วย Enter)</label>
+                        <textarea id="editDetails" class="form-control" rows="5" placeholder="รายละเอียดสินค้า&#10;คุณสมบัติ 1&#10;คุณสมบัติ 2"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editNormalPrice">ราคาปกติ</label>
+                            <input type="number" id="editNormalPrice" class="form-control" placeholder="7990">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPromoPrice">ราคาโปรโมชั่น</label>
+                            <input type="number" id="editPromoPrice" class="form-control" placeholder="5990">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCost">ต้นทุน</label>
+                            <input type="number" id="editCost" class="form-control" placeholder="4200">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editFlagshipPrice">ราคา Flagship</label>
+                            <input type="number" id="editFlagshipPrice" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDealerPrice">ราคา Dealer</label>
+                            <input type="number" id="editDealerPrice" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editMarketplacePrice">ราคา Marketplace</label>
+                            <input type="number" id="editMarketplacePrice" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editExpireDate">วันหมดอายุ</label>
+                        <input type="date" id="editExpireDate" class="form-control">
+                    </div>
+                    <div class="form-row">
+                        <button id="saveSku" class="btn">บันทึก</button>
+                        <button id="deleteSku" class="btn btn-secondary">ลบ</button>
+                        <button id="clearForm" class="btn btn-secondary">ล้างฟอร์ม</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Management -->
+            <div id="templateTab" class="tab-content">
+                <h3>จัดการแม่แบบและโลโก้</h3>
+                <div class="form-group">
+                    <label for="logoUpload">อัปโหลดโลโก้</label>
+                    <div class="file-upload" onclick="document.getElementById('logoUpload').click()">
+                        <input type="file" id="logoUpload" accept="image/*">
+                        <div>คลิกเพื่อเลือกไฟล์โลโก้</div>
+                    </div>
+                </div>
+                <div id="logoPreview"></div>
+            </div>
+
+            <!-- User Management -->
+            <div id="usersTab" class="tab-content">
+                <h3>จัดการผู้ใช้งาน</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUsername">ชื่อผู้ใช้ใหม่</label>
+                        <input type="text" id="newUsername" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">รหัสผ่าน</label>
+                        <input type="password" id="newPassword" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="newRole">บทบาท</label>
+                        <select id="newRole" class="form-select">
+                            <option value="user1">User1 (Flagship Only)</option>
+                            <option value="user2">User2 (Flagship Only)</option>
+                            <option value="user3">User3 (Dealer + GP%)</option>
+                            <option value="user4">User4 (Marketplace + GP%)</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button id="addUser" class="btn">เพิ่มผู้ใช้</button>
+                </div>
+                <div id="usersList"></div>
+            </div>
+
+            <!-- Logs -->
+            <div id="logsTab" class="tab-content">
+                <h3>บันทึกการใช้งาน</h3>
+                <button id="exportLogs" class="btn btn-secondary">ส่งออก CSV</button>
+                <div id="logsList"></div>
+            </div>
+
+            <!-- Import/Export -->
+            <div id="importTab" class="tab-content">
+                <h3>นำเข้า/ส่งออกข้อมูล</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>นำเข้าไฟล์ Excel</label>
+                        <div class="file-upload" onclick="document.getElementById('importFile').click()">
+                            <input type="file" id="importFile" accept=".xlsx,.xls">
+                            <div>คลิกเพื่อเลือกไฟล์ Excel</div>
+                        </div>
+                    </div>
+                    <button id="exportExcel" class="btn btn-secondary">ส่งออก Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">ตัวอย่างป้ายราคา</h3>
+                <button class="close-btn" onclick="closePreview()">&times;</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button id="prevTag" class="btn btn-secondary">ก่อนหน้า</button>
+                <span id="tagCounter">1 / 1</span>
+                <button id="nextTag" class="btn btn-secondary">ถัดไป</button>
+            </div>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentRole = null;
+        let allData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let itemsPerPage = 20;
+        let selectedItems = new Set();
+        let previewItems = [];
+        let currentPreviewIndex = 0;
+
+        // User credentials and roles
+        const users = {
+            'host': { password: 'host123', role: 'host', channels: ['flagship', 'dealer', 'marketplace'] },
+            'admin': { password: 'admin123', role: 'admin', channels: ['flagship', 'dealer', 'marketplace'] },
+            'user1': { password: 'user123', role: 'user1', channels: ['flagship'] },
+            'user2': { password: 'user456', role: 'user2', channels: ['flagship'] },
+            'user3': { password: 'dealer123', role: 'user3', channels: ['dealer'] },
+            'user4': { password: 'market123', role: 'user4', channels: ['marketplace'] }
+        };
+
+        // Sample data
+        const sampleData = [
+            {
+                sku: "MP-00010",
+                description: "iCon Pro Audio GoLive Pro",
+                details: "Professional streaming interface\nXLR and 1/4\" inputs\nUSB-C connectivity\nReal-time monitoring\nCompact design",
+                normal_price: "7990",
+                promo_price: "5990",
+                flagship_price: "5990",
+                dealer_price: "5600",
+                marketplace_price: "5790",
+                cost: "4200",
+                expire_date: "31-12-2025"
+            },
+            {
+                sku: "MP-00020",
+                description: "Audio-Technica ATH-M50x",
+                details: "Professional monitor headphones\n45mm large aperture drivers\n90° swiveling earcups\nDetachable cables\nFoldable design",
+                normal_price: "5500",
+                promo_price: "",
+                flagship_price: "5500",
+                dealer_price: "5200",
+                marketplace_price: "5350",
+                cost: "3800",
+                expire_date: ""
+            },
+            {
+                sku: "MP-00030",
+                description: "Yamaha MG10XU Mixing Console",
+                details: "10-input stereo mixer\nBuilt-in SPX effects\nUSB connectivity\nCompressor on mono channels\nPAD switch on mono channels",
+                normal_price: "8900",
+                promo_price: "7500",
+                flagship_price: "7500",
+                dealer_price: "7000",
+                marketplace_price: "7300",
+                cost: "5200",
+                expire_date: "15-01-2026"
+            }
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            loadStoredData();
+            setupEventListeners();
+        });
+
+        function initializeApp() {
+            // Check if user is already logged in
+            const storedUser = localStorage.getItem('currentUser');
+            const storedRole = localStorage.getItem('currentRole');
+            
+            if (storedUser && storedRole) {
+                currentUser = storedUser;
+                currentRole = storedRole;
+                showMainApp();
+            } else {
+                showLoginPage();
+            }
+        }
+
+        function loadStoredData() {
+            // Load data from localStorage or use sample data
+            const storedData = localStorage.getItem('skuData');
+            if (storedData) {
+                allData = JSON.parse(storedData);
+            } else {
+                allData = [...sampleData];
+                localStorage.setItem('skuData', JSON.stringify(allData));
+            }
+            filteredData = [...allData];
+        }
+
+        function setupEventListeners() {
+            // Login form
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            
+            // Main app controls
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            document.getElementById('expireFilter').addEventListener('change', handleExpireFilter);
+            document.getElementById('channelSelect').addEventListener('change', handleChannelChange);
+            document.getElementById('selectAll').addEventListener('change', handleSelectAll);
+            
+            // Buttons
+            document.getElementById('previewBtn').addEventListener('click', showPreview);
+            document.getElementById('printAllBtn').addEventListener('click', printAllSelected);
+            document.getElementById('exportPdfBtn').addEventListener('click', exportPDF);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('adminPanelBtn').addEventListener('click', showAdminPanel);
+            document.getElementById('backToMainBtn').addEventListener('click', showMainApp);
+            
+            // Pagination
+            document.getElementById('prevPageBtn').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextPageBtn').addEventListener('click', () => changePage(1));
+            
+            // Preview modal
+            document.getElementById('prevTag').addEventListener('click', () => changePreviewTag(-1));
+            document.getElementById('nextTag').addEventListener('click', () => changePreviewTag(1));
+            
+            // Admin panel tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+            });
+            
+            // Admin form handlers
+            document.getElementById('saveSku').addEventListener('click', saveSku);
+            document.getElementById('deleteSku').addEventListener('click', deleteSku);
+            document.getElementById('clearForm').addEventListener('click', clearSkuForm);
+            document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
+            document.getElementById('importFile').addEventListener('change', handleImport);
+            document.getElementById('exportExcel').addEventListener('click', exportExcel);
+            document.getElementById('exportLogs').addEventListener('click', exportLogs);
+            document.getElementById('addUser').addEventListener('click', addUser);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (users[username] && users[username].password === password) {
+                currentUser = username;
+                currentRole = users[username].role;
+                localStorage.setItem('currentUser', currentUser);
+                localStorage.setItem('currentRole', currentRole);
+                
+                logActivity('login', `${username} logged in`);
+                showMainApp();
+            } else {
+                errorDiv.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+            }
+        }
+
+        function showLoginPage() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            
+            setupUserInterface();
+            renderTable();
+        }
+
+        function showAdminPanel() {
+            if (!['host', 'admin'].includes(currentRole)) return;
+            
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            
+            setupAdminInterface();
+        }
+
+        function setupUserInterface() {
+            // Set user role display
+            document.getElementById('userRole').textContent = `Role: ${currentRole.toUpperCase()} (${currentUser})`;
+            
+            // Show/hide admin panel button
+            if (['host', 'admin'].includes(currentRole)) {
+                document.getElementById('adminPanelBtn').classList.remove('hidden');
+            }
+            
+            // Setup channel selector based on role
+            setupChannelSelector();
+            
+            // Show/hide GP% column
+            if (['user3', 'user4'].includes(currentRole)) {
+                document.getElementById('gpColumn').classList.remove('hidden');
+            }
+        }
+
+        function setupChannelSelector() {
+            const channelSelect = document.getElementById('channelSelect');
+            const userChannels = users[currentUser].channels;
+            
+            // Clear existing options
+            channelSelect.innerHTML = '';
+            
+            // Add allowed channels
+            const channelLabels = {
+                'flagship': 'Flagship',
+                'dealer': 'Dealer',
+                'marketplace': 'Marketplace'
+            };
+            
+            userChannels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel;
+                option.textContent = channelLabels[channel];
+                channelSelect.appendChild(option);
+            });
+        }
+
+        function setupAdminInterface() {
+            // Show/hide user management tab for host only
+            if (currentRole === 'host') {
+                document.getElementById('usersTab').style.display = 'block';
+            } else {
+                document.getElementById('usersTab').style.display = 'none';
+            }
+            
+            loadUsersList();
+            loadLogsList();
+        }
+
+        function handleSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            applyFilters();
+        }
+
+        function handleExpireFilter() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const expireDate = document.getElementById('expireFilter').value;
+            
+            filteredData = allData.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    item.sku.toLowerCase().includes(searchTerm) ||
+                    item.description.toLowerCase().includes(searchTerm);
+                
+                const matchesExpire = !expireDate || 
+                    (item.expire_date && formatDateForComparison(item.expire_date) === expireDate);
+                
+                return matchesSearch && matchesExpire;
+            });
+            
+            currentPage = 1;
+            selectedItems.clear();
+            renderTable();
+        }
+
+        function formatDateForComparison(dateStr) {
+            if (!dateStr) return '';
+            
+            // Handle "Expire DD-MM-YYYY" or "DD-MM-YYYY" format
+            const cleanDate = dateStr.replace('Expire ', '');
+            const [day, month, year] = cleanDate.split('-');
+            
+            if (day && month && year) {
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            return '';
+        }
+
+        function handleChannelChange() {
+            renderTable();
+        }
+
+        function handleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+            
+            if (selectAllCheckbox.checked) {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                    selectedItems.add(checkbox.dataset.sku);
+                });
+            } else {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                selectedItems.clear();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const channel = document.getElementById('channelSelect').value;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+            
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="loading">ไม่พบข้อมูل</td></tr>';
+                updatePagination();
+                return;
+            }
+            
+            tbody.innerHTML = pageData.map(item => {
+                const price = getPrice(item, channel);
+                const normalPrice = parseFloat(item.normal_price || 0);
+                const promoPrice = parseFloat(item.promo_price || 0);
+                const cost = parseFloat(item.cost || 0);
+                
+                const hasPromo = promoPrice > 0;
+                const displayPrice = formatPrice(price);
+                const normalPriceDisplay = hasPromo ? 
+                    `<span class="price strikethrough">${formatPrice(normalPrice)}</span><br>` : '';
+                
+                let gpColumn = '';
+                if (['user3', 'user4'].includes(currentRole) && cost > 0) {
+                    const gp = ((price - cost) / price * 100).toFixed(1);
+                    gpColumn = `<td>${gp}%</td>`;
+                } else if (['user3', 'user4'].includes(currentRole)) {
+                    gpColumn = '<td>-</td>';
+                }
+                
+                const detailsList = item.details.split('\n').slice(0, 5).map(detail => 
+                    `<li>${detail.trim()}</li>`
+                ).join('');
+                
+                return `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="checkbox item-checkbox" 
+                                data-sku="${item.sku}" 
+                                ${selectedItems.has(item.sku) ? 'checked' : ''}
+                                onchange="toggleItemSelection('${item.sku}')">
+                        </td>
+                        <td>${item.sku}</td>
+                        <td>${item.description}</td>
+                        <td class="details-cell">
+                            <ul class="details-list">${detailsList}</ul>
+                        </td>
+                        <td class="price">${formatPrice(normalPrice)}</td>
+                        <td>
+                            ${normalPriceDisplay}
+                            <span class="price">${displayPrice}</span>
+                        </td>
+                        <td class="expire-date">${item.expire_date || '-'}</td>
+                        ${gpColumn}
+                    </tr>
+                `;
+            }).join('');
+            
+            updatePagination();
+        }
+
+        function toggleItemSelection(sku) {
+            if (selectedItems.has(sku)) {
+                selectedItems.delete(sku);
+            } else {
+                selectedItems.add(sku);
+            }
+            
+            // Update select all checkbox
+            const totalVisible = document.querySelectorAll('.item-checkbox').length;
+            const totalSelected = document.querySelectorAll('.item-checkbox:checked').length;
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            selectAllCheckbox.checked = totalSelected === totalVisible && totalSelected > 0;
+            selectAllCheckbox.indeterminate = totalSelected > 0 && totalSelected < totalVisible;
+        }
+
+        function getPrice(item, channel) {
+            const channelPriceMap = {
+                'flagship': item.flagship_price,
+                'dealer': item.dealer_price,
+                'marketplace': item.marketplace_price
+            };
+            
+            const channelPrice = channelPriceMap[channel];
+            
+            if (channelPrice) {
+                return parseFloat(channelPrice);
+            }
+            
+            // Fallback logic
+            if (item.promo_price && parseFloat(item.promo_price) > 0) {
+                return parseFloat(item.promo_price);
+            }
+            
+            return parseFloat(item.normal_price || 0);
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('th-TH').format(price);
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const pageInfo = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            pageInfo.textContent = `หน้า ${currentPage} จาก ${totalPages}`;
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderTable();
+            }
+        }
+
+        function showPreview() {
+            if (selectedItems.size === 0) {
+                alert('กรุณาเลือกสินค้าที่ต้องการดูตัวอย่าง');
+                return;
+            }
+            
+            previewItems = Array.from(selectedItems).map(sku => 
+                allData.find(item => item.sku === sku)
+            ).filter(Boolean);
+            
+            currentPreviewIndex = 0;
+            renderPreview();
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        function renderPreview() {
+            const item = previewItems[currentPreviewIndex];
+            const template = document.getElementById('templateSelect').value;
+            const channel = document.getElementById('channelSelect').value;
+            
+            const price = getPrice(item, channel);
+            const normalPrice = parseFloat(item.normal_price || 0);
+            const promoPrice = parseFloat(item.promo_price || 0);
+            const hasPromo = promoPrice > 0;
+            
+            const priceTag = createPriceTag(item, template, price, normalPrice, hasPromo);
+            document.getElementById('previewContent').innerHTML = priceTag;
+            
+            // Update counter
+            document.getElementById('tagCounter').textContent = 
+                `${currentPreviewIndex + 1} / ${previewItems.length}`;
+            
+            // Update navigation buttons
+            document.getElementById('prevTag').disabled = currentPreviewIndex === 0;
+            document.getElementById('nextTag').disabled = currentPreviewIndex === previewItems.length - 1;
+        }
+
+        function changePreviewTag(direction) {
+            const newIndex = currentPreviewIndex + direction;
+            if (newIndex >= 0 && newIndex < previewItems.length) {
+                currentPreviewIndex = newIndex;
+                renderPreview();
+            }
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        function createPriceTag(item, template, price, normalPrice, hasPromo) {
+            const logo = localStorage.getItem('companyLogo') || '';
+            const logoImg = logo ? `<img src="${logo}" class="tag-logo" alt="Logo">` : '';
+            
+            const expireDisplay = item.expire_date ? 
+                `<div class="tag-expire">${item.expire_date.includes('Expire') ? item.expire_date : 'Expire ' + item.expire_date}</div>` : '';
+            
+            const normalPriceDisplay = hasPromo ? 
+                `<div class="tag-price-normal">${formatPrice(normalPrice)}</div>` : '';
+            
+            const detailsList = item.details.split('\n').slice(0, 5).map(detail => 
+                `<li>${detail.trim()}</li>`
+            ).join('');
+            
+            const templateClass = `tag-${template}`;
+            
+            return `
+                <div class="price-tag ${templateClass}">
+                    ${logoImg}
+                    <div class="tag-sku">${item.sku}</div>
+                    <div class="tag-content">
+                        <div class="tag-product-name">${item.description}</div>
+                        <div class="tag-details">
+                            <ul>${detailsList}</ul>
+                        </div>
+                        <div class="tag-price-area">
+                            ${expireDisplay}
+                            <div class="tag-price-main">${formatPrice(price)}</div>
+                            ${normalPriceDisplay}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function printAllSelected() {
+            if (selectedItems.size === 0) {
+                alert('กรุณาเลือกสินค้าที่ต้องการพิมพ์');
+                return;
+            }
+            
+            const template = document.getElementById('templateSelect').value;
+            const channel = document.getElementById('channelSelect').value;
+            
+            const itemsPerPageMap = {
+                'a4': 1,
+                'a5': 2,
+                'a6': 4,
+                'accessories': 12
+            };
+            
+            const itemsPerPrintPage = itemsPerPageMap[template];
+            const selectedData = Array.from(selectedItems).map(sku => 
+                allData.find(item => item.sku === sku)
+            ).filter(Boolean);
+            
+            let printContent = '';
+            
+            for (let i = 0; i < selectedData.length; i += itemsPerPrintPage) {
+                const pageItems = selectedData.slice(i, i + itemsPerPrintPage);
+                let pageContent = '<div style="page-break-after: always; display: flex; flex-wrap: wrap;">';
+                
+                pageItems.forEach(item => {
+                    const price = getPrice(item, channel);
+                    const normalPrice = parseFloat(item.normal_price || 0);
+                    const promoPrice = parseFloat(item.promo_price || 0);
+                    const hasPromo = promoPrice > 0;
+                    
+                    pageContent += createPriceTag(item, template, price, normalPrice, hasPromo);
+                });
+                
+                pageContent += '</div>';
+                printContent += pageContent;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>ป้ายราคา</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
+                    <style>
+                        ${document.querySelector('style').textContent}
+                        @media print {
+                            body { background: white !important; }
+                            .price-tag { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>${printContent}</body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.print();
+            
+            logActivity('print', `Printed ${selectedData.length} tags`);
+        }
+
+        function exportPDF() {
+            // This would require jsPDF implementation
+            alert('ฟังก์ชั่น Export PDF กำลังพัฒนา');
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentRole');
+            currentUser = null;
+            currentRole = null;
+            selectedItems.clear();
+            showLoginPage();
+        }
+
+        // Admin Panel Functions
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        function saveSku() {
+            const skuData = {
+                sku: document.getElementById('editSku').value.trim(),
+                description: document.getElementById('editDescription').value.trim(),
+                details: document.getElementById('editDetails').value.trim(),
+                normal_price: document.getElementById('editNormalPrice').value,
+                promo_price: document.getElementById('editPromoPrice').value,
+                flagship_price: document.getElementById('editFlagshipPrice').value,
+                dealer_price: document.getElementById('editDealerPrice').value,
+                marketplace_price: document.getElementById('editMarketplacePrice').value,
+                cost: document.getElementById('editCost').value,
+                expire_date: formatDateFromInput(document.getElementById('editExpireDate').value)
+            };
+            
+            if (!skuData.sku || !skuData.description) {
+                alert('กรุณากรอกรหัสสินค้าและชื่อสินค้า');
+                return;
+            }
+            
+            const existingIndex = allData.findIndex(item => item.sku === skuData.sku);
+            
+            if (existingIndex >= 0) {
+                allData[existingIndex] = skuData;
+                logActivity('edit', `Updated SKU: ${skuData.sku}`);
+            } else {
+                allData.push(skuData);
+                logActivity('create', `Created SKU: ${skuData.sku}`);
+            }
+            
+            localStorage.setItem('skuData', JSON.stringify(allData));
+            filteredData = [...allData];
+            renderTable();
+            alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+        }
+
+        function deleteSku() {
+            const sku = document.getElementById('editSku').value.trim();
+            if (!sku) {
+                alert('กรุณาใส่รหัสสินค้าที่ต้องการลบ');
+                return;
+            }
+            
+            if (confirm(`ต้องการลบสินค้า ${sku} หรือไม่?`)) {
+                const index = allData.findIndex(item => item.sku === sku);
+                if (index >= 0) {
+                    allData.splice(index, 1);
+                    localStorage.setItem('skuData', JSON.stringify(allData));
+                    filteredData = [...allData];
+                    renderTable();
+                    clearSkuForm();
+                    logActivity('delete', `Deleted SKU: ${sku}`);
+                    alert('ลบข้อมูลเรียบร้อยแล้ว');
+                } else {
+                    alert('ไม่พบรหัสสินค้าที่ระบุ');
+                }
+            }
+        }
+
+        function clearSkuForm() {
+            document.getElementById('editSku').value = '';
+            document.getElementById('editDescription').value = '';
+            document.getElementById('editDetails').value = '';
+            document.getElementById('editNormalPrice').value = '';
+            document.getElementById('editPromoPrice').value = '';
+            document.getElementById('editFlagshipPrice').value = '';
+            document.getElementById('editDealerPrice').value = '';
+            document.getElementById('editMarketplacePrice').value = '';
+            document.getElementById('editCost').value = '';
+            document.getElementById('editExpireDate').value = '';
+        }
+
+        function formatDateFromInput(dateInput) {
+            if (!dateInput) return '';
+            const [year, month, day] = dateInput.split('-');
+            return `${day}-${month}-${year}`;
+        }
+
+        function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const logoData = e.target.result;
+                    localStorage.setItem('companyLogo', logoData);
+                    
+                    const preview = document.getElementById('logoPreview');
+                    preview.innerHTML = `<img src="${logoData}" style="max-width: 200px; max-height: 100px; margin-top: 10px;">`;
+                    
+                    logActivity('upload', 'Logo uploaded');
+                    alert('อัปโหลดโลโก้เรียบร้อยแล้ว');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleImport(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                        
+                        // Process imported data
+                        const processedData = jsonData.map(row => ({
+                            sku: row.sku || row.SKU || '',
+                            description: row.description || row.Description || '',
+                            details: row.details || row.Details || '',
+                            normal_price: (row.normal_price || row.NormalPrice || '').toString(),
+                            promo_price: (row.promo_price || row.PromoPrice || '').toString(),
+                            flagship_price: (row.flagship_price || row.FlagshipPrice || '').toString(),
+                            dealer_price: (row.dealer_price || row.DealerPrice || '').toString(),
+                            marketplace_price: (row.marketplace_price || row.MarketplacePrice || '').toString(),
+                            cost: (row.cost || row.Cost || '').toString(),
+                            expire_date: row.expire_date || row.ExpireDate || ''
+                        }));
+                        
+                        // Merge with existing data
+                        processedData.forEach(newItem => {
+                            const existingIndex = allData.findIndex(item => item.sku === newItem.sku);
+                            if (existingIndex >= 0) {
+                                allData[existingIndex] = newItem;
+                            } else {
+                                allData.push(newItem);
+                            }
+                        });
+                        
+                        localStorage.setItem('skuData', JSON.stringify(allData));
+                        filteredData = [...allData];
+                        renderTable();
+                        
+                        logActivity('import', `Imported ${processedData.length} items`);
+                        alert(`นำเข้าข้อมูล ${processedData.length} รายการเรียบร้อยแล้ว`);
+                    } catch (error) {
+                        alert('เกิดข้อผิดพลาดในการนำเข้าไฟล์');
+                        console.error(error);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(allData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "SKU Data");
+            XLSX.writeFile(wb, "sku_data.xlsx");
+            
+            logActivity('export', 'Exported SKU data to Excel');
+        }
+
+        function loadUsersList() {
+            if (currentRole !== 'host') return;
+            
+            const usersList = document.getElementById('usersList');
+            const storedUsers = JSON.parse(localStorage.getItem('customUsers') || '{}');
+            
+            let usersHtml = '<h4>รายการผู้ใช้</h4><ul>';
+            
+            Object.keys(users).forEach(username => {
+                const user = users[username];
+                usersHtml += `<li>${username} - ${user.role} <button onclick="removeUser('${username}')" class="btn btn-small btn-secondary">ลบ</button></li>`;
+            });
+            
+            Object.keys(storedUsers).forEach(username => {
+                const user = storedUsers[username];
+                usersHtml += `<li>${username} - ${user.role} <button onclick="removeUser('${username}')" class="btn btn-small btn-secondary">ลบ</button></li>`;
+            });
+            
+            usersHtml += '</ul>';
+            usersList.innerHTML = usersHtml;
+        }
+
+        function addUser() {
+            if (currentRole !== 'host') return;
+            
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+            
+            if (!username || !password) {
+                alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                return;
+            }
+            
+            if (users[username]) {
+                alert('ชื่อผู้ใช้นี้มีอยู่แล้ว');
+                return;
+            }
+            
+            const channelMap = {
+                'user1': ['flagship'],
+                'user2': ['flagship'],
+                'user3': ['dealer'],
+                'user4': ['marketplace'],
+                'admin': ['flagship', 'dealer', 'marketplace']
+            };
+            
+            const storedUsers = JSON.parse(localStorage.getItem('customUsers') || '{}');
+            storedUsers[username] = {
+                password: password,
+                role: role,
+                channels: channelMap[role] || ['flagship']
+            };
+            
+            localStorage.setItem('customUsers', JSON.stringify(storedUsers));
+            
+            // Clear form
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            
+            loadUsersList();
+            logActivity('user_create', `Created user: ${username} (${role})`);
+            alert('เพิ่มผู้ใช้เรียบร้อยแล้ว');
+        }
+
+        function removeUser(username) {
+            if (currentRole !== 'host') return;
+            
+            if (confirm(`ต้องการลบผู้ใช้ ${username} หรือไม่?`)) {
+                if (users[username]) {
+                    alert('ไม่สามารถลบผู้ใช้เริ่มต้นได้');
+                    return;
+                }
+                
+                const storedUsers = JSON.parse(localStorage.getItem('customUsers') || '{}');
+                delete storedUsers[username];
+                localStorage.setItem('customUsers', JSON.stringify(storedUsers));
+                
+                loadUsersList();
+                logActivity('user_delete', `Deleted user: ${username}`);
+                alert('ลบผู้ใช้เรียบร้อยแล้ว');
+            }
+        }
+
+        function loadLogsList() {
+            const logsList = document.getElementById('logsList');
+            const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
+            
+            if (logs.length === 0) {
+                logsList.innerHTML = '<p>ไม่มีบันทึกการใช้งาน</p>';
+                return;
+            }
+            
+            const logsHtml = logs.slice(-50).reverse().map(log => 
+                `<div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <strong>${log.timestamp}</strong> - ${log.user} (${log.role})
+                    <br>${log.action}: ${log.details}
+                </div>`
+            ).join('');
+            
+            logsList.innerHTML = logsHtml;
+        }
+
+        function exportLogs() {
+            const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
+            
+            if (logs.length === 0) {
+                alert('ไม่มีบันทึกการใช้งานที่จะส่งออก');
+                return;
+            }
+            
+            const csvContent = [
+                'Timestamp,User,Role,Action,Details',
+                ...logs.map(log => 
+                    `"${log.timestamp}","${log.user}","${log.role}","${log.action}","${log.details}"`
+                )
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'activity_logs.csv';
+            link.click();
+            
+            logActivity('export', 'Exported activity logs');
+        }
+
+        function logActivity(action, details) {
+            if (!currentUser || !currentRole) return;
+            
+            const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
+            const logEntry = {
+                timestamp: new Date().toLocaleString('th-TH'),
+                user: currentUser,
+                role: currentRole,
+                action: action,
+                details: details
+            };
+            
+            logs.push(logEntry);
+            
+            // Keep only last 1000 logs
+            if (logs.length > 1000) {
+                logs.splice(0, logs.length - 1000);
+            }
+            
+            localStorage.setItem('activityLogs', JSON.stringify(logs));
+        }
+
+        // Table row click handler for editing
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('tbody tr') && ['host', 'admin'].includes(currentRole)) {
+                const row = e.target.closest('tr');
+                const sku = row.children[1]?.textContent;
+                
+                if (sku && !e.target.classList.contains('checkbox') && !e.target.classList.contains('item-checkbox')) {
+                    loadSkuForEdit(sku);
+                }
+            }
+        });
+
+        function loadSkuForEdit(sku) {
+            const item = allData.find(item => item.sku === sku);
+            if (!item) return;
+            
+            document.getElementById('editSku').value = item.sku || '';
+            document.getElementById('editDescription').value = item.description || '';
+            document.getElementById('editDetails').value = item.details || '';
+            document.getElementById('editNormalPrice').value = item.normal_price || '';
+            document.getElementById('editPromoPrice').value = item.promo_price || '';
+            document.getElementById('editFlagshipPrice').value = item.flagship_price || '';
+            document.getElementById('editDealerPrice').value = item.dealer_price || '';
+            document.getElementById('editMarketplacePrice').value = item.marketplace_price || '';
+            document.getElementById('editCost').value = item.cost || '';
+            
+            if (item.expire_date) {
+                const dateStr = item.expire_date.replace('Expire ', '');
+                const [day, month, year] = dateStr.split('-');
+                if (day && month && year) {
+                    document.getElementById('editExpireDate').value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            }
+            
+            showAdminPanel();
+            switchTab('sku');
+        }
+
+        // Enhanced login to support custom users
+        function enhancedLogin(username, password) {
+            // Check default users first
+            if (users[username] && users[username].password === password) {
+                return users[username];
+            }
+            
+            // Check custom users
+            const customUsers = JSON.parse(localStorage.getItem('customUsers') || '{}');
+            if (customUsers[username] && customUsers[username].password === password) {
+                return customUsers[username];
+            }
+            
+            return null;
+        }
+
+        // Update login handler to use enhanced login
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            const user = enhancedLogin(username, password);
+            
+            if (user) {
+                currentUser = username;
+                currentRole = user.role;
+                localStorage.setItem('currentUser', currentUser);
+                localStorage.setItem('currentRole', currentRole);
+                
+                // Update users object with custom user data
+                users[username] = user;
+                
+                logActivity('login', `${username} logged in`);
+                showMainApp();
+            } else {
+                errorDiv.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+            }
+        }
+
+        // Load stored logo on page load
+        function loadStoredLogo() {
+            const logoData = localStorage.getItem('companyLogo');
+            if (logoData) {
+                const preview = document.getElementById('logoPreview');
+                if (preview) {
+                    preview.innerHTML = `<img src="${logoData}" style="max-width: 200px; max-height: 100px; margin-top: 10px;">`;
+                }
+            }
+        }
+
+        // Enhanced initialization
+        function initializeApp() {
+            // Check if user is already logged in
+            const storedUser = localStorage.getItem('currentUser');
+            const storedRole = localStorage.getItem('currentRole');
+            
+            if (storedUser && storedRole) {
+                // Load custom users
+                const customUsers = JSON.parse(localStorage.getItem('customUsers') || '{}');
+                Object.assign(users, customUsers);
+                
+                currentUser = storedUser;
+                currentRole = storedRole;
+                showMainApp();
+            } else {
+                showLoginPage();
+            }
+            
+            // Load stored logo
+            loadStoredLogo();
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + P for print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                if (selectedItems.size > 0) {
+                    printAllSelected();
+                }
+            }
+            
+            // ESC to close modal
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+            
+            // Arrow keys in preview
+            if (document.getElementById('previewModal').style.display === 'flex') {
+                if (e.key === 'ArrowLeft') {
+                    changePreviewTag(-1);
+                } else if (e.key === 'ArrowRight') {
+                    changePreviewTag(1);
+                }
+            }
+        });
+
+        // Auto-save functionality for admin forms
+        let autoSaveTimeout;
+        function setupAutoSave() {
+            const formInputs = document.querySelectorAll('#skuForm input, #skuForm textarea');
+            formInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = setTimeout(() => {
+                        const formData = {
+                            sku: document.getElementById('editSku').value,
+                            description: document.getElementById('editDescription').value,
+                            // ... other fields
+                        };
+                        localStorage.setItem('draftSku', JSON.stringify(formData));
+                    }, 1000);
+                });
+            });
+        }
+
+        // Load draft data
+        function loadDraft() {
+            const draft = localStorage.getItem('draftSku');
+            if (draft && ['host', 'admin'].includes(currentRole)) {
+                const data = JSON.parse(draft);
+                if (confirm('พบข้อมูลร่างที่ยังไม่ได้บันทึก ต้องการโหลดหรือไม่?')) {
+                    Object.keys(data).forEach(key => {
+                        const element = document.getElementById(`edit${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                        if (element) element.value = data[key];
+                    });
+                }
+            }
+        }
+
+        // Clear draft after save
+        function clearDraft() {
+            localStorage.removeItem('draftSku');
+        }
+
+        // Enhanced save function
+        function saveSku() {
+            const skuData = {
+                sku: document.getElementById('editSku').value.trim(),
+                description: document.getElementById('editDescription').value.trim(),
+                details: document.getElementById('editDetails').value.trim(),
+                normal_price: document.getElementById('editNormalPrice').value,
+                promo_price: document.getElementById('editPromoPrice').value,
+                flagship_price: document.getElementById('editFlagshipPrice').value,
+                dealer_price: document.getElementById('editDealerPrice').value,
+                marketplace_price: document.getElementById('editMarketplacePrice').value,
+                cost: document.getElementById('editCost').value,
+                expire_date: formatDateFromInput(document.getElementById('editExpireDate').value)
+            };
+            
+            if (!skuData.sku || !skuData.description) {
+                alert('กรุณากรอกรหัสสินค้าและชื่อสินค้า');
+                return;
+            }
+            
+            const existingIndex = allData.findIndex(item => item.sku === skuData.sku);
+            
+            if (existingIndex >= 0) {
+                allData[existingIndex] = skuData;
+                logActivity('edit', `Updated SKU: ${skuData.sku}`);
+            } else {
+                allData.push(skuData);
+                logActivity('create', `Created SKU: ${skuData.sku}`);
+            }
+            
+            localStorage.setItem('skuData', JSON.stringify(allData));
+            filteredData = [...allData];
+            renderTable();
+            clearDraft();
+            alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+        }
+
+        // Add search highlighting
+        function highlightSearchTerm(text, searchTerm) {
+            if (!searchTerm) return text;
+            
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            return text.replace(regex, '<mark style="background: #ff4444; color: white; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+        }
+
+        // Enhanced table rendering with search highlighting
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const channel = document.getElementById('channelSelect').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+            
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="loading">ไม่พบข้อมูล</td></tr>';
+                updatePagination();
+                return;
+            }
+            
+            tbody.innerHTML = pageData.map(item => {
+                const price = getPrice(item, channel);
+                const normalPrice = parseFloat(item.normal_price || 0);
+                const promoPrice = parseFloat(item.promo_price || 0);
+                const cost = parseFloat(item.cost || 0);
+                
+                const hasPromo = promoPrice > 0;
+                const displayPrice = formatPrice(price);
+                const normalPriceDisplay = hasPromo ? 
+                    `<span class="price strikethrough">${formatPrice(normalPrice)}</span><br>` : '';
+                
+                let gpColumn = '';
+                if (['user3', 'user4'].includes(currentRole) && cost > 0) {
+                    const gp = ((price - cost) / price * 100).toFixed(1);
+                    gpColumn = `<td>${gp}%</td>`;
+                } else if (['user3', 'user4'].includes(currentRole)) {
+                    gpColumn = '<td>-</td>';
+                }
+                
+                const detailsList = item.details.split('\n').slice(0, 5).map(detail => 
+                    `<li>${highlightSearchTerm(detail.trim(), searchTerm)}</li>`
+                ).join('');
+                
+                const highlightedSku = highlightSearchTerm(item.sku, searchTerm);
+                const highlightedDescription = highlightSearchTerm(item.description, searchTerm);
+                
+                return `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="checkbox item-checkbox" 
+                                data-sku="${item.sku}" 
+                                ${selectedItems.has(item.sku) ? 'checked' : ''}
+                                onchange="toggleItemSelection('${item.sku}')">
+                        </td>
+                        <td>${highlightedSku}</td>
+                        <td>${highlightedDescription}</td>
+                        <td class="details-cell">
+                            <ul class="details-list">${detailsList}</ul>
+                        </td>
+                        <td class="price">${formatPrice(normalPrice)}</td>
+                        <td>
+                            ${normalPriceDisplay}
+                            <span class="price">${displayPrice}</span>
+                        </td>
+                        <td class="expire-date">${item.expire_date || '-'}</td>
+                        ${gpColumn}
+                    </tr>
+                `;
+            }).join('');
+            
+            updatePagination();
+        }
+
+        // Export functionality with better error handling
+        function exportExcel() {
+            try {
+                if (!window.XLSX) {
+                    alert('ไม่สามารถโหลด Excel library ได้');
+                    return;
+                }
+                
+                const exportData = allData.map(item => ({
+                    'รหัสสินค้า': item.sku,
+                    'ชื่อสินค้า': item.description,
+                    'รายละเอียด': item.details.replace(/\n/g, ' | '),
+                    'ราคาปกติ': item.normal_price,
+                    'ราคาโปรโมชั่น': item.promo_price,
+                    'ราคา Flagship': item.flagship_price,
+                    'ราคา Dealer': item.dealer_price,
+                    'ราคา Marketplace': item.marketplace_price,
+                    'ต้นทุน': item.cost,
+                    'วันหมดอายุ': item.expire_date
+                }));
+                
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "ข้อมูล SKU");
+                
+                // Set column widths
+                const colWidths = [
+                    { wch: 15 }, // รหัสสินค้า
+                    { wch: 30 }, // ชื่อสินค้า
+                    { wch: 50 }, // รายละเอียด
+                    { wch: 12 }, // ราคาปกติ
+                    { wch: 15 }, // ราคาโปรโมชั่น
+                    { wch: 15 }, // ราคา Flagship
+                    { wch: 15 }, // ราคา Dealer
+                    { wch: 15 }, // ราคา Marketplace
+                    { wch: 12 }, // ต้นทุน
+                    { wch: 15 }  // วันหมดอายุ
+                ];
+                ws['!cols'] = colWidths;
+                
+                const fileName = `sku_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                logActivity('export', `Exported ${allData.length} SKUs to Excel`);
+                alert('ส่งออกข้อมูลเรียบร้อยแล้ว');
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('เกิดข้อผิดพลาดในการส่งออกไฟล์');
+            }
+        }
+
+        // Initialize auto-save and draft loading when admin panel is shown
+        function showAdminPanel() {
+            if (!['host', 'admin'].includes(currentRole)) return;
+            
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            
+            setupAdminInterface();
+            setupAutoSave();
+            loadDraft();
+        }
+    </script>
+</body>
+</html>
